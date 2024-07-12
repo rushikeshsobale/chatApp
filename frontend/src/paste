@@ -1,0 +1,118 @@
+import React, { useEffect, useState } from 'react';
+import "./Chat.css";
+import io from 'socket.io-client';
+const ChatUi = ({member, userId, name, socket}) => {
+  const [Messages, setMessages] = useState([]);
+  const [messageInput, setMessageInput] = useState(''); 
+  const [sendid, setSendId] = useState(member[0]);
+  const [Member, setMember] = useState()
+  const [chatHistory, setChatHistory] = useState({});
+  const [array, setArray] = useState(null)
+  const sendMessage = () => {
+    if (messageInput.trim() !== '') {
+      console.log("sent message:", messageInput);
+      const obj = {
+        text:messageInput,
+        sender:name,
+        
+      }
+      console.log(obj)                
+      setChatHistory(prevChatHistory => ({
+        ...prevChatHistory,
+        [sendid]: [...(prevChatHistory[sendid] || []),{ ...obj, sentByCurrentUser: obj.sender === name }]
+      }));
+     // Output: 'hey'
+      // Output: 'Rushikesh'
+
+      socket.emit('sendMessage', { message: messageInput,userId:sendid,  sender: name });
+      setMessageInput('');
+    }
+  };
+  
+ useEffect(()=>{
+  if (socket && sendid) {
+    setSendId(member[0])
+    console.log('socket connection is fine')
+    socket.emit("joinRoom", {userId, sendid} );
+    console.log(sendid,"sendid")
+    const array = chatHistory[sendid] ? Object.values(chatHistory[sendid]) : [];
+    setArray(array)
+    console.log(array)
+  }
+ },[member])
+  
+  
+  return (
+        <div className="chat-box mx-1 rounded">
+          <div className="bg-dark py-2 m-1 rounded text-white">
+            <h4 className="mt-1 mx-3">{member[1]}</h4>
+          </div>
+          <div className="messages bg-light" style={{ height: "77%" }}>
+          
+            { array && array.map((message, index) => (
+              <div key={index} className={`p-2 message ${!message.sentByCurrentUser ? 'received' : 'sent'}`}>
+                <p>{message.text}</p>
+                <span>{message.sender}</span>
+              </div>
+            ))}
+        
+          </div>
+          <div className="message-input bottom-element">
+          <input
+              type="text"
+              placeholder="Type your message..."
+              value={messageInput}
+              onChange={(e) => setMessageInput(e.target.value)}
+            />  
+            <button onClick={sendMessage}>Send</button>
+          </div>
+        </div>
+    
+  );
+};
+
+export default ChatUi;
+
+
+
+useEffect(() => {
+  const postData = async () => {
+    try {
+      await fetch(`http://localhost:5500/postChat/${sendid}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(array)
+      });
+    } catch (error) {
+      console.error('Error posting data:', error);
+    }
+  };
+
+  // Cleanup function to run on unmount
+  return () => {
+    postData();
+    console.log("Component has unmounted");
+  };
+}, );
+
+useEffect(() => {
+  setChatHistory(prevChatHistory => {
+    const updatedHistory = { ...prevChatHistory };
+    for (const [key, messages] of Object.entries(History)) {
+      if (updatedHistory[key]) {
+        // Merge without duplicating
+        const existingMessages = new Set(updatedHistory[key].map(m => m.text));
+        updatedHistory[key] = [
+          ...updatedHistory[key],
+          ...messages.filter(m => !existingMessages.has(m.text))
+        ];
+      } else {
+        updatedHistory[key] = messages;
+      }
+    }
+    return updatedHistory;
+  });
+  console.log(chatHistory);
+}, [History]);
