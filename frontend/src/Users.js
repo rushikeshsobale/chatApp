@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import './index.css'; // Import CSS file for styling
+import 'bootstrap/dist/css/bootstrap.min.css'; // Import Bootstrap CSS
+import './index.css'; // Import your custom CSS if needed
 
 const UsersList = () => {
   const [users, setUsers] = useState([]);
   const [dataFetched, setDataFetched] = useState(false);
-  const [userData, setUserData] = useState(null); // Initialize userData state
-  const [disabledButtons, setDisabledButtons] = useState([]); // Initialize state for disabled buttons
+  const [userData, setUserData] = useState(null);
+  const [disabledButtons, setDisabledButtons] = useState([]);
 
   useEffect(() => {
     if (!dataFetched) {
@@ -45,7 +46,7 @@ const UsersList = () => {
 
       if (call.ok) {
         console.log("Friend request sent successfully");
-        setDisabledButtons([...disabledButtons, index]); // Add index to disabledButtons array
+        setDisabledButtons([...disabledButtons, index]);
       }
     } catch (error) {
       console.log(error);
@@ -60,7 +61,7 @@ const UsersList = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        setUserData(data); // Set userData state with fetched data
+        setUserData(data);
       } else if (response.status === 401) {
         console.log("Unauthorized: Token not provided or invalid");
       } else {
@@ -87,7 +88,6 @@ const UsersList = () => {
 
       if (response.ok) {
         console.log("Friend request accepted successfully");
-        // Remove the accepted request from the userData.requests array
         setUserData(prevUserData => ({
           ...prevUserData,
           requests: prevUserData.requests.filter(request => request[0] !== requestId)
@@ -112,11 +112,9 @@ const UsersList = () => {
 
       if (response.ok) {
         console.log("Friend request declined successfully");
-        // Remove the declined request from the userData.requests array
         setUserData(prevUserData => ({
           ...prevUserData,
           requests: prevUserData.requests.filter(request => request[0] !== requestId)
-
         }));
       } else {
         console.error("Failed to decline friend request:", response.statusText);
@@ -126,35 +124,52 @@ const UsersList = () => {
     }
   };
 
-
   return (
-    <div className="users-container">
+    <div className="container mt-5">
       <div className="row">
-        <div className="col-12 col-sm-8">
-          <h1>Notifications</h1>
-          <ul className="users-list">
+        {/* Notifications Section */}
+        <div className="col-md-8 mb-4">
+          <h2 className="mb-4">Notifications</h2>
+          <ul className="list-group">
             {userData && userData.requests && userData.requests.map((request, index) => (
-              <li key={index} className="user-item">
-                {request[1]} sent friend request
-                <button onClick={() => acceptFriendRequest(request[0])} className="add-friend-btn fs-11">Accept</button>
-                <button onClick={() => declineFriendRequest(request[0])} className="add-friend-btn fs-11">Decline</button>
+              <li key={index} className="list-group-item d-flex justify-content-between align-items-center">
+                {request[1]} sent a friend request
+                <div>
+                  <button 
+                    onClick={() => acceptFriendRequest(request[0])} 
+                    className="btn btn-success btn-sm me-2"
+                  >
+                    Accept
+                  </button>
+                  <button 
+                    onClick={() => declineFriendRequest(request[0])} 
+                    className="btn btn-danger btn-sm"
+                  >
+                    Decline
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="col-12 col-sm-4">
-          <h2>Users</h2>
-          <ul className="users-list">
-            {users
-              .map((user, index) => (
-                <li key={user._id} className="user-item">
-                  {user.firstName + ' ' + user.lastName}
-                  <button onClick={() => addFriend(user._id, index)} className="add-friend-btn fs-11" disabled={disabledButtons.includes(index)}>Add Friend</button>
-                </li>
-              ))}
+        {/* Users List Section */}
+        <div className="col-md-4">
+          <h2 className="mb-4">Users</h2>
+          <ul className="list-group">
+            {users.map((user, index) => (
+              <li key={user._id} className="list-group-item d-flex justify-content-between align-items-center">
+                {user.firstName + ' ' + user.lastName}
+                <button 
+                  onClick={() => addFriend(user._id, index)} 
+                  className="btn btn-primary btn-sm"
+                  disabled={disabledButtons.includes(index)}
+                >
+                  Add Friend
+                </button>
+              </li>
+            ))}
           </ul>
-
         </div>
       </div>
     </div>

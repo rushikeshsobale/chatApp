@@ -4,7 +4,6 @@ import './index.css';
 //import App from './App';
 import reportWebVitals from './reportWebVitals';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import Chat from './Chat.js';
 import Navbar from './Nav.js';
 import AuthForms from './AuthForms.js';
 import { BrowserRouter, Routes, Route} from 'react-router-dom';

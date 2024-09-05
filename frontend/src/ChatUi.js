@@ -1,70 +1,72 @@
-// ChatUi.js
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { addMessage } from './store/store.js';
+import { addMessage } from './store/store';
 import './Chat.css';
 import io from 'socket.io-client';
 
 const ChatUi = ({ member, userId, name, socket }) => {
   const [messageInput, setMessageInput] = useState('');
-  const [sendid, setSendId] = useState(member[0]);
-  const [array, setArray] = useState([]);
+  const [sendId, setSendId] = useState(member[0]);
+  const [messageArray, setMessageArray] = useState([]);
   const chatHistory = useSelector(state => state.chat.chatHistory);
-  const dispatch = useDispatch();
 
+  const dispatch = useDispatch();
 
   const sendMessage = () => {
     if (messageInput.trim() !== '') {
-      console.log("Sent message:", messageInput);
-      const obj = {
+      const message = {
         text: messageInput,
-        sender: name,
+        senderId:userId,
+        senderName: name,
+        
       };
       dispatch(addMessage({
-        neededId: sendid,
-        message: { ...obj, sentByCurrentUser: obj.sender === name },
+        neededId: sendId,
+        message: { ...message, sentByCurrentUser: message.senderName === name },
       }));
-      socket.emit('sendMessage', { message: messageInput, userId: sendid, sender: name, myId: userId });
+      socket.emit('sendMessage', { message: messageInput, userId: sendId, sender: name, myId: userId });
       setMessageInput('');
     }
   };
 
   useEffect(() => {
-    if (socket) {
-      console.log(member, "member")
+    if (socket && sendId) {
+      console.log(chatHistory,'history')
+    
       setSendId(member[0]);
-      const array = chatHistory[sendid] ? Object.values(chatHistory[sendid]) : [];
-      setArray(array);
+      const messages = chatHistory[sendId] ? Object.values(chatHistory[sendId]) : [];
+      setMessageArray(messages);
     }
-  }, [sendid, chatHistory, member, socket]);
-
-  useEffect(() => {
-    if (socket) {
-  
-    }
-  }, [socket]);
+  }, [sendId, chatHistory, member, socket]);
 
   return (
-    <div className="chat-box mx-1 rounded ">
-      <div className="bg-dark py-2 m-1 rounded text-white" >
-        <h4 className="mt-1 mx-3">{member[1]}</h4>
+    <div className="chat-box d-flex flex-column rounded shadow">
+      <div className="chat-header bg-primary text-white p-3 rounded-top">
+        <h4 className="mb-0">{member[1]}</h4>
       </div>
-      <div className="messages bg-light" style={{ height: '77%' }}>
-        {array && array.map((message, index) => (
-          <div key={index} className={`p-2 message ${!message.sentByCurrentUser ? 'received' : 'sent'}`}>
-            <p>{message.text}</p>
-            <span>{message.sender}</span>
-          </div>
-        ))}
+      <div className="messages flex-grow-1 p-3 overflow-auto">
+        {messageArray.length === 0 ? (
+          <p className="text-center text-muted">Start a conversation!</p>
+        ) : (
+          messageArray.map((message, index) => (
+            <div key={index} className={`message ${!message.sentByCurrentUser ? 'received' : 'sent'}`}>
+              <div className="message-content">
+                <p>{message.text}</p>
+                <span className="message-sender">{message.senderName}</span>
+              </div>
+            </div>
+          ))
+        )}
       </div>
-      <div className="message-input bottom-element">
+      <div className="message-input d-flex align-items-center p-2 border-top">
         <input
           type="text"
+          className="form-control me-2"
           placeholder="Type your message..."
           value={messageInput}
           onChange={(e) => setMessageInput(e.target.value)}
         />
-        <button onClick={sendMessage}>Send</button>
+        <button className="btn btn-primary" onClick={sendMessage}>Send</button>
       </div>
     </div>
   );
