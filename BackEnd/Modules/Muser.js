@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const messageSchema = new mongoose.Schema({
   text: { type: String, required: true },
-  senderId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
+  senderId: { type: String, required: true },
   senderName: { type: String, required: true },
   timestamp: { type: Date, default: Date.now },
 });
@@ -15,8 +15,9 @@ const userSchema = new mongoose.Schema({
   birthdate: { type: Date },
   phone: { type: String },
   username: { type: String, unique: true },
-  requests: { type: Array, default: [] }, // Example for friends requests
-  messages: [messageSchema], // Use the messageSchema here to define an array of message objects
+  requests: { type: Array, default: [] },
+  friends: { type: Array, default: [] },
+  messages: {  type: Object}, // Define messages as an object
 });
 
 const User = mongoose.model('User', userSchema);

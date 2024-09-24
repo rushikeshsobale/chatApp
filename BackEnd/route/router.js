@@ -173,74 +173,77 @@ router.post("/acceptFriendRequest/:requestId", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-router.post("/postChat/:sendid", async (req, res) => {
-  try {
-    const chatHistory = req.body;
-    const reqId = req.params.sendid;
-    const response = await Muser.findById(reqId)
-    const jay = response.friends[0][0]
-    if (response) {
-      console.log(jay, "jayyyyy")
-      console.log(chatHistory, "chathistory")
-    }
-  }
-  catch (error) {
-    console.log(error)
-  }
-})
-
-router.post("/postMessages", async (req, res) => {
-
-  const data = req.body;
-  console.log("dataFromPOstMessage", data)
-
-})
-module.exports = router;
-
 router.post('/sendMessage', async (req, res) => {
   const { sendId, message } = req.body;
+  console.log(message);
   const { text, senderId, senderName } = message;
 
-  const newMessage = {
+  const newMessageForSender = {
     text,
     senderId,
     senderName,
+    sentByCurrentUser: true, // Set to true for sender
+    timestamp: new Date(),
+  };
+
+  const newMessageForReceiver = {
+    text,
+    senderId,
+    senderName,
+    sentByCurrentUser: false, // Set to false for receiver
     timestamp: new Date(),
   };
 
   try {
     const user = await Muser.findById(senderId);
+    const receiver = await Muser.findById(sendId);
 
     if (user) {
-      if (!user.messages[sendId]) {
-         user.messages[sendId] = [];
+      // Logic for sender
+      if (!user.messages) {
+        user.messages = {};
       }
-        user.messages[sendId].push(newMessage)
-        await user.save();
-        res.status(200).json({ message: 'Message sent!' });
-     
-    }
-    else{
-      res.status(400).json({ message: 'Message  Not fdjvdk ssent!' });
-    }
-    //  user.messages[sendId].push(newMessage);
-    //  await user.save(); 
+      if (!user.messages[sendId]) {
+        user.messages[sendId] = [];
+      }
+      user.messages[sendId].push(newMessageForSender);
 
-    //  res.status(200).json({ message: 'Message sent!' });
-    // } else {
-    //     res.status(400).json({ error: 'User not found.' });
-    // }
+      // Save message to sender
+      await Muser.findByIdAndUpdate(
+        { _id: senderId },
+        { messages: user.messages },
+        { upsert: true }
+      );
+
+      // Logic for receiver
+      if (!receiver.messages) {
+        receiver.messages = {};
+      }
+      if (!receiver.messages[senderId]) {
+        receiver.messages[senderId] = [];
+      }
+      receiver.messages[senderId].push(newMessageForReceiver);
+
+      // Save message to receiver
+      await Muser.findByIdAndUpdate(
+        { _id: sendId },
+        { messages: receiver.messages },
+        { upsert: true }
+      );
+
+      res.status(200).json({ message: 'Message sent!' });
+    } else {
+      res.status(404).json({ message: 'User not found.' });
+    }
   } catch (error) {
     console.error("Error sending message:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
-
-
 router.get('/:userId/messages', async (req, res) => {
   const { userId } = req.params;
-  console.log(userId)
+
   try {
     const user = await Muser.findById(userId).select('messages');
     if (!user) {
@@ -252,3 +255,23 @@ router.get('/:userId/messages', async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+// Add this to your existing router
+router.get('/getMessages/:userId', async (req, res) => {
+  const { userId } = req.params;
+  console.log("this got called", userId)
+  try {
+    const user = await Muser.findById(userId);
+ 
+    if (user) {
+      res.status(200).json(user.messages || {});
+    } else {
+      res.status(404).json({ message: 'User not found.' });
+    }
+  } catch (error) {
+    console.error("Error retrieving messages:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+module.exports = router;

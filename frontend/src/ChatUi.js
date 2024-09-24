@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addMessage } from './store/store';
 import './Chat.css';
-import io from 'socket.io-client';
-
 const ChatUi = ({ member, userId, name, socket }) => {
   const [messageInput, setMessageInput] = useState('');
   const [sendId, setSendId] = useState(member[0]);
@@ -12,14 +10,25 @@ const ChatUi = ({ member, userId, name, socket }) => {
 
   const dispatch = useDispatch();
 
-  const sendMessage = () => {
+  const sendMessage = async() => {
     if (messageInput.trim() !== '') {
       const message = {
         text: messageInput,
         senderId:userId,
         senderName: name,
-        
       };
+
+    const response =  await fetch('http://localhost:5500/sendMessage', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({sendId,   message: { ...message, sentByCurrentUser: message.senderName === name }}),
+      });
+
+      if(response){
+        console.log(response, "response")
+      }
       dispatch(addMessage({
         neededId: sendId,
         message: { ...message, sentByCurrentUser: message.senderName === name },
@@ -32,7 +41,6 @@ const ChatUi = ({ member, userId, name, socket }) => {
   useEffect(() => {
     if (socket && sendId) {
       console.log(chatHistory,'history')
-    
       setSendId(member[0]);
       const messages = chatHistory[sendId] ? Object.values(chatHistory[sendId]) : [];
       setMessageArray(messages);

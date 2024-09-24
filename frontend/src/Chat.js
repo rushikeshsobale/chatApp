@@ -3,8 +3,7 @@ import io from 'socket.io-client';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ChatUi from './ChatUi';
 import { useDispatch, useSelector } from 'react-redux';
-import { addMessage } from './store/store';
-
+import { addMessage, setInitialMessages} from './store/store';
 const ChatComponent = () => {
   const [name, setName] = useState('');
   const [socket, setSocket] = useState(null);
@@ -13,7 +12,6 @@ const ChatComponent = () => {
   const [userId, setUserId] = useState(null);
   const chatHistory = useSelector(state => state.chat.chatHistory);
   const dispatch = useDispatch();
-
   const getToken = () => {
     const cookies = document.cookie.split(';').map(cookie => cookie.trim());
     const tokenCookie = cookies.find(cookie => cookie.startsWith('token='));
@@ -22,7 +20,6 @@ const ChatComponent = () => {
     }
     return null;
   };
-
   const fetchTokenAndSetState = () => {
     const token = getToken();
     if (token) {
@@ -31,6 +28,7 @@ const ChatComponent = () => {
         setUserId(tokenPayload.userId);
         setName(tokenPayload.name);
         setFriends(tokenPayload.friends);
+        console.log(tokenPayload.friends,"tokenPaayload")
       } catch (error) {
         console.error('Error decoding token:', error);
       }
@@ -39,7 +37,6 @@ const ChatComponent = () => {
 
   useEffect(() => {
     fetchTokenAndSetState();
-
     if (userId) {
       // Initialize socket only if userId is available
       const newSocket = io('http://localhost:5500', { query: { userId } });
@@ -63,8 +60,9 @@ const ChatComponent = () => {
     setSelectedFriend(member);
   };
 
-  const handleMessage = (message) => {
+  const handleMessage = async(message) => {
     console.log(message, "from the sender");
+    const sendId =  message.senderId;
     dispatch(addMessage({
       neededId: message.senderId,
       message: {
@@ -72,23 +70,38 @@ const ChatComponent = () => {
         sentByCurrentUser: message.sender === name,
       },
     }));
-  };
 
-  const handleUserLeft = async () => {
-    try {
-      const response = await fetch("http://localhost:5500/postMessages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(chatHistory),
-      });
-      console.log("disconnect response", response);
-    } catch (error) {
-      console.error('Error posting messages:', error);
+  };
+  useEffect(() => {
+    
+    const fetchMessages = async () => {
+      try {
+        const response = await fetch(`http://localhost:5500/getMessages/${userId}`); 
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        } 
+        const messages = await response.json(); 
+        console.log(messages, "messages");
+
+        // Dispatch each message to your Redux store
+       
+          dispatch(setInitialMessages(messages)); // Adjust the neededId as appropriate
+        
+
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+        // Optionally, dispatch an error action to your Redux store
+      }
+    };
+
+    if(userId){
+    fetchMessages();
     }
-  };
+  }, [userId]);
 
+  useEffect(()=>{
+
+  })
   return (
     <div className="container-fluid vh-100 d-flex flex-column">
       <div className="row flex-grow-1">
@@ -107,7 +120,7 @@ const ChatComponent = () => {
               </li>
             ))}
           </ul>
-          <button className="btn btn-danger mt-3" onClick={handleUserLeft}>Logout</button>
+        
         </div>
         {selectedFriend &&
           <div className="col-md-8 p-3 d-flex flex-column">
