@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, Route, Routes } from 'react-router-dom';
-import './Chat.css'; // import your custom styles
+import './Nav.css'; // import your custom styles
 import AuthForms from './AuthForms';
 
 const Navbar = () => {
@@ -11,24 +11,25 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="navbar">
-      <div className="navbar-container">
-        <div className="navbar-logo">
-          <Link to="/">GalacticHub</Link>
-        </div>
-        <div className={`navbar-links ${isOpen ? 'active' : ''}`}>
-          <Link to="/">Home</Link>
-          <Link to="/AuthForms">SingUp</Link>
-          <Link to="/Users">Discover</Link>
-          <Link to="/Notifications">Notifications</Link>
-        </div>
-        <div className="navbar-toggle" onClick={toggleMenu}>
-          <div className={`menu-icon ${isOpen ? 'open' : ''}`}>
-            <div className="menu-icon-inner"></div>
-          </div>
+    <nav className="navbar" style={{ zIndex: 1 }}>
+    <div className="navbar-container ">
+      <div className={`navbar-menu ${isOpen ? 'active' : ''} m-auto`}>
+        <Link to="/" className="nav-item">Home</Link>
+        <Link to="/AuthForms" className="nav-item">Sign Up</Link>
+        <Link to="/Users" className="nav-item">Discover</Link>
+        <Link to="/ProfilePage" className="nav-item">Profile</Link>
+      </div>
+      <div className="navbar-toggle" onClick={toggleMenu}>
+        <div className={`menu-icon ${isOpen ? 'open' : ''}`}>
+          <div className="menu-icon-inner"></div>
+          <div className="menu-icon-inner"></div>
+          <div className="menu-icon-inner"></div>
         </div>
       </div>
-    </nav>
+    </div>
+  </nav>
+  
+
   );
 };
 

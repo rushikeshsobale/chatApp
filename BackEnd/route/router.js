@@ -14,6 +14,7 @@ router.get("/", (req, res) => {
   res.send("Alright");
 });
 
+
 router.get("/getUsers", verifyToken, async (req, res) => {
   try {
     const users = await Muser.find(); // Retrieve all users
@@ -27,17 +28,11 @@ router.get("/getUsers", verifyToken, async (req, res) => {
 });
 router.get("/getUser", verifyToken, async (req, res) => {
   try {
-    // Extract token from cookies
-
-
-    // Retrieve user data based on userId
+    const x=await Muser.findOne({_id:req.decoded.userId}).populate("friends2")
     const user = await Muser.findById(req.decoded.userId);
-
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-
-    // Send user data in response
     res.json(user);
   } catch (error) {
     console.error(error);
@@ -47,12 +42,10 @@ router.get("/getUser", verifyToken, async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
-
-
 router.post("/register", async (req, res) => {
   try {
-    // Extract user data from request body
-    const { email, password, firstName, lastName, birthdate, phone, username } = req.body;
+
+    const { email, password, firstName, lastName, birthdate, phone } = req.body;
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10); // 10 is the salt rounds
@@ -114,25 +107,46 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.post("/sendRequest/:userId", verifyToken, async (req, res) => {
+router.post("/sendRequest/:receiverId", verifyToken, async (req, res) => {
   try {
-    const sender = [req.decoded.userId, req.decoded.name, false];
-    const userId = req.params.userId;
-
-    const user = await Muser.findById(userId);
-    if (!user) {
+    const senderId = req.decoded.userId;
+    const senderName = req.decoded.name;
+    const receiverId = req.params.receiverId;
+    const receiver = await Muser.findById(receiverId);
+    const sender = await Muser.findById(senderId);
+    if (!receiver) {
       return res.status(404).json({ error: 'User not found' });
     }
-    const existingRequest = user.requests.find(request => request[0] === req.decoded.userId);
-    if (existingRequest) {
-      return res.status(400).json({ message: 'Request already sent to this user' });
+    if (senderId === receiverId) {
+      return res.status(400).json({ message: 'You cannot send a friend request to yourself' });
     }
-    user.requests.push(sender);
+    const alreadyFriends = sender.friends.find(friend => friend.friendId === receiverId);
+    if (alreadyFriends) {
+      return res.status(400).json({ message: 'You are already friends' });
+    }
 
-    // Save the updated user document
-    await user.save();
+    await Muser.findByIdAndUpdate(senderId, {
+      $push: {
+        friends: {
+          friendId: receiverId,
+          friendName: receiver.firstName,
+          isFriend: false,
 
-    res.status(200).json({ message: 'Request sent successfully', user });
+        }
+      }
+    });
+    await Muser.findByIdAndUpdate(receiverId, {
+      $push: {
+        friends: {
+          friendId: senderId,
+          friendName: sender.firstName,
+          isFriend: false,
+
+        }
+      }
+    });
+
+    res.status(200).json({ message: 'Request sent successfully' });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -140,49 +154,62 @@ router.post("/sendRequest/:userId", verifyToken, async (req, res) => {
 });
 
 
-router.post("/acceptFriendRequest/:requestId", async (req, res) => {
-  try {
-    const token = req.cookies.token;
-    const reqId = req.params.requestId;
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "mySecreateKey");
-    const response = await Muser.findById(reqId);
-    const abc = await Muser.findById(decoded.userId);
-    const data = [decoded.userId, decoded.name, abc.lastName];
-    const fname = response.firstName;
-    const lname = response.lastName;
-    const array = [reqId, fname, lname];
 
-    if (response) {
-      response.friends.push(data);
-      await response.save();
+
+router.post("/acceptFriendRequest/:requesterId", verifyToken, async (req, res) => {
+  try {
+    const userId = req.decoded.userId; // The user accepting the request
+    const requesterId = req.params.requesterId; // The user who sent the request
+    console.log(userId, 'userId', requesterId)
+    // Find both users
+    const user = await Muser.findById(userId);
+    const requester = await Muser.findById(requesterId);
+
+    if (!user || !requester) {
+      return res.status(404).json({ error: 'User not found' });
     }
-    if (abc) {
-      abc.friends.push(array);
-      await abc.save();
-      for (let i = 0; i < abc.requests.length; i++) {
-        if (abc.requests[i][0] == reqId) {
-          abc.requests.splice(i, 1); // Delete abc.requests[i]
-          await abc.save();
-          break; // Exit loop since the element is deleted
-        }
+
+    const existingRequestIndex = user.friends.findIndex(request => request.friendId === requesterId);
+    if (existingRequestIndex === -1) {
+      return res.status(400).json({ message: 'No friend request from this user' });
+    }
+    await Muser.findByIdAndUpdate(userId, {
+      $set: {
+        "friends.$[elem].isFriend": true // Update isFriend to true for the requester
       }
-    }
-    res.status(200).json({ message: "Request accepted successfully" });
+    }, {
+      arrayFilters: [{ "elem.friendId": requesterId }], // Match the requester in the friends array
+      new: true
+    });
+
+    await Muser.findByIdAndUpdate(requesterId, {
+      $set: {
+        "friends.$[elem].isFriend": true // Update isFriend to true for the user
+      }
+    }, {
+      arrayFilters: [{ "elem.friendId": userId }], // Match the user in the friends array
+      new: true
+    });
+
+    res.status(200).json({ message: 'Friend request accepted' });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+
 router.post('/sendMessage', async (req, res) => {
   const { sendId, message } = req.body;
   console.log(message);
-  const { text, senderId, senderName } = message;
+  const { text, senderId, senderName, status } = message;
 
   const newMessageForSender = {
     text,
     senderId,
     senderName,
-    sentByCurrentUser: true, // Set to true for sender
+    sentByCurrentUser: true,
+    status,
     timestamp: new Date(),
   };
 
@@ -241,9 +268,34 @@ router.post('/sendMessage', async (req, res) => {
   }
 });
 
+
+
+router.delete("/deleteRequest/:requesterId", verifyToken, async (req, res) => {
+  try {
+    const userId = req.decoded.userId; // The user who wants to delete the request
+    const requesterId = req.params.requesterId; // The user who sent the request
+
+    // Find the user and check for existing request
+    const user = await Muser.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check if there is a pending friend request from the requester
+    const existingRequestIndex = user.friendRequests.findIndex(request => request.senderId.toString() === requesterId);
+    if (existingRequestIndex === -1) {
+      return res.status(400).json({ message: 'No friend request from this user' });
+    }
+    user.friendRequests.splice(existingRequestIndex, 1);
+    await Muser.findByIdAndUpdate(userId, { friendRequests: user.friendRequests }, { new: true });
+    res.status(200).json({ message: 'Friend request deleted successfully', user });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 router.get('/:userId/messages', async (req, res) => {
   const { userId } = req.params;
-
   try {
     const user = await Muser.findById(userId).select('messages');
     if (!user) {
@@ -255,14 +307,11 @@ router.get('/:userId/messages', async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
-// Add this to your existing router
 router.get('/getMessages/:userId', async (req, res) => {
   const { userId } = req.params;
-  console.log("this got called", userId)
   try {
     const user = await Muser.findById(userId);
- 
+
     if (user) {
       res.status(200).json(user.messages || {});
     } else {
@@ -273,5 +322,58 @@ router.get('/getMessages/:userId', async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+router.post('/updateMessageStatus', async (req, res) => {
+  const { userId, messageId, status } = req.body;
+  try {
+      const user = await Muser.findById(userId);
+      if (!user) {
+          return res.status(404).send('User not found');
+      }
+      const messages = user.messages[messageId];
+      if (messages && messages.length > 0) {
+          const lastMessage = messages[messages.length - 1];
+          lastMessage.status = status;
+          await Muser.findByIdAndUpdate(
+              userId,
+              { [`messages.${messageId}.${messages.length - 1}.status`]: status },
+              { new: true } 
+          );
+          return res.status(200).send('Last message status updated successfully');
+      } else {
+          return res.status(404).send('No messages found for this sender');
+      }
+  } catch (error) {
+      console.error(error);
+      return res.status(500).send('Server error');
+  }
+});
+router.post('/deleteChat', async (req, res) => {
+  const { userId, messageId } = req.body;
+ 
+  try {
+      // Find the user and clear the messages for the specified messageId
+      const updatedUser = await Muser.findOneAndUpdate(
+          { _id: userId },
+          { $set: { [`messages.${messageId}`]: [] } },
+          { new: true } // Return the updated document
+      );
+
+      // Check if user was found
+      if (!updatedUser) {
+          return res.status(404).send('User not found');
+      }
+
+      // Check if messages were actually cleared
+      if (!updatedUser.messages[messageId]) {
+          return res.status(404).send('No messages found for this sender');
+      }
+
+      return res.status(200).send('Chat cleared successfully');
+  } catch (error) {
+      console.error(error);
+      return res.status(500).send('Server error');
+  }
+});
+
 
 module.exports = router;

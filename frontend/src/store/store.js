@@ -1,32 +1,42 @@
-import { configureStore, createSlice} from '@reduxjs/toolkit'
+import { configureStore, createSlice } from '@reduxjs/toolkit';
+
 const chatSlice = createSlice({
-    name: 'chat',
-    initialState: {
-      chatHistory: {},
+  name: 'chat',
+  initialState: {
+    chatHistory: {},
+  },
+  reducers: {
+    addMessage: (state, action) => {
+      const { neededId, message } = action.payload;
+      console.log(message , 'toimestamp')
+      if (!state.chatHistory[neededId]) {
+        state.chatHistory[neededId] = [];
+      }
+      state.chatHistory[neededId].push(message);
     },
-    reducers: {
-      addMessage: (state, action) => {
-        console.log(action, "actio")
-        const { neededId, message } = action.payload;
-        console.log('Action Payload:', action.payload);
-        if (!state.chatHistory[neededId]) {
-          state.chatHistory[neededId] = [];
-        }
-        state.chatHistory[neededId].push(message);
-        console.log('Updated Chat History:', state.chatHistory); // Log the updated chat history
-      },
-      setInitialMessages: (state, messages) => {
-        state.chatHistory = messages.payload;
-        console.log(messages.payload,"messages")
-      },
+    setInitialMessages: (state, action) => {
+      state.chatHistory = action.payload;
     },
-  });
-  
- export const { addMessage, setInitialMessages } = chatSlice.actions;
+    updateMessageStatus: (state, action) => {
+      const { sendId, userId } = action.payload;
+      const messages = state.chatHistory[sendId];
+
+      if (messages) {
+        messages.forEach((message) => {
+          // Assuming you want to mark all messages from the sender as read
+          if (message.senderId === userId) {
+            message.read = true; // Set read status
+          }
+        });
+      }
+    },
+  },
+});
+
+export const { addMessage, setInitialMessages, updateMessageStatus } = chatSlice.actions;
+
 export const store = configureStore({
-  
-    reducer: {
-        chat: chatSlice.reducer,
-      },
-  
-})
+  reducer: {
+    chat: chatSlice.reducer,
+  },
+});

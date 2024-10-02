@@ -3,94 +3,6 @@
     margin: 0;
 }
 
-.navbar {
-    background-color: #000;
-    padding: 20px 0;
-  }
-  
-  .navbar-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-  
-  .navbar-logo a {
-    color: #fff;
-    font-size: 1.5rem;
-    text-decoration: none;
-    font-family: 'Orbitron', sans-serif; /* Use a futuristic font */
-  }
-  
-  .navbar-links {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .navbar-links a {
-    color: #fff;
-    text-decoration: none;
-    font-family: 'Orbitron', sans-serif;
-    padding: 0 10px;
-  }
-  
-  .navbar-toggle {
-    cursor: pointer;
-  }
-  
-  .menu-icon {
-    width: 30px;
-    height: 30px;
-    position: relative;
-  }
-  
-  .menu-icon-inner {
-    width: 100%;
-    height: 3px;
-    background-color: #fff;
-    position: absolute;
-    top: 50%;
-    left: 0;
-    transform: translateY(-50%);
-    transition: all 0.3s ease;
-  }
-  
-  .menu-icon.open .menu-icon-inner {
-    background-color: transparent;
-  }
-  
-  .menu-icon.open .menu-icon-inner::before,
-  .menu-icon.open .menu-icon-inner::after {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background-color: #fff;
-  }
-  
-  .menu-icon.open .menu-icon-inner::before {
-    top: -10px;
-    transition: top 0.3s ease;
-  }
-  
-  .menu-icon.open .menu-icon-inner::after {
-    bottom: -10px;
-    transition: bottom 0.3s ease;
-  }
-  
-  .navbar-links.active {
-    display: flex;
-    flex-direction: column;
-    background-color: #000;
-    position: absolute;
-    top: 80px;
-    left: 0;
-    width: 100%;
-    text-align: center;
-  }
-
   .sent {
     text-align: right;
   }
@@ -132,22 +44,25 @@
   }
   
   .chat-box {
-    flex: 3;
-    background-color: #fff;
-
-    border-radius: 8px;
+     /* Adjust height as needed */
+   background-image: url('https://img.freepik.com/free-vector/dark-black-background-design-with-stripes_1017-38064.jpg?w=1060&t=st=1727705824~exp=1727706424~hmac=d082a9ebe5ddefc5eb174f22865d782bf72c837b95ebc7797fc9bd30e2d95060'); 
+    background-size: cover;
   }
-  
   .messages {
     margin-bottom: 2px;
   }
+
+  .box::before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5); /* Dark overlay with 50% opacity */
+   /* Ensure it's above the background image */
+}
   
-  .message {
-    margin-bottom: 10px;
-    padding: 10px;
-    border-radius: 8px;
-  }
-  
+ 
   .message.sent {
     background-color: #d6e6ff;
     align-self: flex-end;
@@ -186,14 +101,15 @@
     background-color: #0056b3;
   }
  
-
 .messages-container {
     direction: ltr; /* Reset direction for the container and its children */
 }
 
 .messages {
-    height: 100%; /* Adjust this height as needed */
-    overflow-y: auto; /* Show scrollbar when content overflows */
+  display: flex;
+  flex-direction: column; /* Keep column direction normal */
+  overflow-y: auto; /* Enable vertical scrolling */
+  height:420px/* Set a fixed height or adjust as needed */
 }
 
 /* Webkit browsers (like Chrome and Safari) */
@@ -206,3 +122,93 @@
     scrollbar-width: none; /* Hide the scrollbar */
 }
 
+.active-status {
+  width: 10px; /* Adjust size as needed */
+  height: 10px;
+  border-radius: 50%; /* Make it circular */
+  background-color: green; /* Green color */
+  display: inline-block; /* To allow it to sit next to text */
+  margin-right: 5px; /* Spacing between the circle and the name */
+}
+
+
+.message-container {
+  transition: background-color 0.3s ease;
+}
+
+.message-container:hover {
+  background-color: #e0f7fa; /* Lighter shade on hover */
+}
+
+.text-dark {
+  font-weight: 500; /* Slightly bolder text for emphasis */
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-image {
+  width: 100px; /* Set a fixed width */
+  height: 100px; /* Set a fixed height */
+  border-radius: 50%; /* Make it circular */
+  object-fit: cover; /* Ensure the image covers the area without stretching */
+  border: 2px solid #4b4c4d; /* Optional: add a border */
+  margin-bottom: 10px; /* Space between image and name */
+}
+
+.shEffect{
+  margin-top: 3px;
+  box-shadow: 5px 4px 5px 10px rgba(0, 0, 0, 0.2); 
+  height: 600px;
+}
+
+.message-count {
+  font-size: 1.2em; /* Adjust size as needed */
+  font-weight: bold; /* Make it bold */
+  color: #0099ff; /* Bright color for visibility */
+  text-shadow: 0 0 5px rgba(84, 162, 217, 0.8), 0 0 10px rgba(255, 204, 0, 0.5);
+  transition: transform 0.2s;
+}
+
+
+.message-count:hover {
+  transform: scale(1.1); /* Slightly enlarge on hover */
+}
+
+
+ul {
+  
+  list-style-type: none; /* Remove default list styling */
+  padding: 0;
+  margin: 0;
+}
+
+li {
+  padding: 10px 15px; /* Add some padding */
+  color: #ffffff; /* White text color */
+  border-bottom: 1px solid; /* Subtle divider between items */
+  transition: background-color 0.3s; /* Smooth background transition */
+}
+
+li:hover {
+  color:green;
+  border-bottom: 2px solid green; /* Transparent bottom border */
+  transition: box-shadow border-bottom 0.3s ease; /* Smooth transition */
+}
+
+.active {
+  background: linear-gradient(45deg, #897f7f, #1a1a1a);
+  transition: background 0.3s ease;
+}
+
+
+.active-status {
+  margin-right: 5px; /* Space between the status and name */
+}
+
+.message-count {
+  color: #b0b0b0; /* Light grey for message count */
+}

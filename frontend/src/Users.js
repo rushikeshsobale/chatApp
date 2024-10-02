@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css'; // Import Bootstrap CSS
-import './index.css'; // Import your custom CSS if needed
+import 'bootstrap/dist/css/bootstrap.min.css';
+import { FaUserPlus, FaUserCheck, FaUserFriends } from 'react-icons/fa'; // Import icons
+import './index.css';
 
 const UsersList = () => {
   const [users, setUsers] = useState([]);
@@ -51,9 +52,9 @@ const UsersList = () => {
     } catch (error) {
       console.log(error);
     }
-  }
+  };
 
-  const fun = async () => {
+  const fetchUserData = async () => {
     try {
       const response = await fetch(`http://localhost:5500/getUser`, {
         method: 'GET',
@@ -73,7 +74,7 @@ const UsersList = () => {
   };
 
   useEffect(() => {
-    fun();
+    fetchUserData();
   }, []);
 
   const acceptFriendRequest = async (requestId) => {
@@ -90,7 +91,9 @@ const UsersList = () => {
         console.log("Friend request accepted successfully");
         setUserData(prevUserData => ({
           ...prevUserData,
-          requests: prevUserData.requests.filter(request => request[0] !== requestId)
+          friends: prevUserData.friends.map(request => 
+            request.friendId === requestId ? { ...request, isFriend: true } : request
+          )
         }));
       } else {
         console.error("Failed to accept friend request:", response.statusText);
@@ -114,7 +117,7 @@ const UsersList = () => {
         console.log("Friend request declined successfully");
         setUserData(prevUserData => ({
           ...prevUserData,
-          requests: prevUserData.requests.filter(request => request[0] !== requestId)
+          friends: prevUserData.friends.filter(request => request.senderId !== requestId)
         }));
       } else {
         console.error("Failed to decline friend request:", response.statusText);
@@ -124,6 +127,17 @@ const UsersList = () => {
     }
   };
 
+  // Check the friend's status
+  const getFriendStatus = (userId) => {
+    if (userData) {
+      const friend = userData.friends.find(friend => friend.friendId === userId);
+      if (friend) {
+        return friend.isFriend ? 'friends' : 'requested'; // Return status
+      }
+    }
+    return 'not_friends'; // Default status
+  };
+
   return (
     <div className="container mt-5">
       <div className="row">
@@ -131,18 +145,18 @@ const UsersList = () => {
         <div className="col-md-8 mb-4">
           <h2 className="mb-4">Notifications</h2>
           <ul className="list-group">
-            {userData && userData.requests && userData.requests.map((request, index) => (
+            {userData && userData.friends.filter(request => !request.isFriend).map((request, index) => (
               <li key={index} className="list-group-item d-flex justify-content-between align-items-center">
-                {request[1]} sent a friend request
+                {request.friendName} sent a friend request
                 <div>
                   <button 
-                    onClick={() => acceptFriendRequest(request[0])} 
+                    onClick={() => acceptFriendRequest(request.friendId)} 
                     className="btn btn-success btn-sm me-2"
                   >
                     Accept
                   </button>
                   <button 
-                    onClick={() => declineFriendRequest(request[0])} 
+                    onClick={() => declineFriendRequest(request.friendId)} 
                     className="btn btn-danger btn-sm"
                   >
                     Decline
@@ -157,18 +171,30 @@ const UsersList = () => {
         <div className="col-md-4">
           <h2 className="mb-4">Users</h2>
           <ul className="list-group">
-            {users.map((user, index) => (
-              <li key={user._id} className="list-group-item d-flex justify-content-between align-items-center">
-                {user.firstName + ' ' + user.lastName}
-                <button 
-                  onClick={() => addFriend(user._id, index)} 
-                  className="btn btn-primary btn-sm"
-                  disabled={disabledButtons.includes(index)}
-                >
-                  Add Friend
-                </button>
-              </li>
-            ))}
+            {users.map((user, index) => {
+              const status = getFriendStatus(user._id);
+              return (
+                <li key={user._id} className="list-group-item d-flex justify-content-between align-items-center">
+                  {user.firstName + ' ' + user.lastName}
+                  {status === 'friends' ? (
+                    <button className="btn btn-secondary btn-sm" disabled>
+                      <FaUserFriends /> Friends
+                    </button>
+                  ) : status === 'requested' ? (
+                    <button className="btn btn-warning btn-sm">
+                      <FaUserCheck /> Requested
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => addFriend(user._id, index)} 
+                      className="btn btn-primary btn-sm"
+                    >
+                      <FaUserPlus /> Add Friend
+                    </button>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>

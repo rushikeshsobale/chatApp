@@ -1,0 +1,32 @@
+/* MenuBar.css */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.menu-bar {
+    display: flex;
+    position: absolute;
+    flex-direction: column;
+    justify-content: center; /* Center the menu items */
+    background-color: #333;
+    padding: 10px;
+    
+}
+
+.menu-item {
+    color: white;
+    padding: 5px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.menu-item:hover {
+    background-color: #575757; /* Change background on hover */
+}
+
+.menu-item:not(:last-child) {
+    border-right: 1px solid #fff; /* Add a divider between items */
+}

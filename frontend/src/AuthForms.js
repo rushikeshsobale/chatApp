@@ -43,7 +43,6 @@ const AuthForms = () => {
       lastName: formData.get('lastName'),
       birthdate: formData.get('birthdate'),
       phone: formData.get('phone'),
-      username: formData.get('username'),
       confPassword: formData.get('confPassword') // for registration
     };
 
